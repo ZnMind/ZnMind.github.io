@@ -130,8 +130,9 @@ class App extends Component {
             target="_blank"
             rel="noopener noreferrer"
           >
-            {/* <img src={dbank} className="App-logo" alt="logo" height="32" /> */}
+            <div>
             <b>DKP</b>
+            </div>
           </a>
           <div>
           <b>One: {Math.round(web3.utils.fromWei(this.state.balance.toString()) * 100) / 100}</b>
