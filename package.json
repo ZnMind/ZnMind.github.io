@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Basic interface to swap for governance token. Auto compounding of yield farming rewards.",
   "author": "ZnMind",
-  "homepage": ".",
+  "homepage": "https://znmind.github.io",
   "dependencies": {
     "@openzeppelin/contracts": "3.3.0",
     "@truffle/hdwallet-provider": "^1.1.0",
