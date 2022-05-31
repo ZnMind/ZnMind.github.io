@@ -4,10 +4,10 @@ import Govtoken from '../abis/Govtoken.json'
 import Router from '../abis/Router.json'
 import Factory from '../abis/Factory.json'
 import Pair from '../abis/Pair.json'
-import Erc20 from '../abis/ERC20.json'
+import Erc20 from '../abis/Erc20.json'
 import Pool from '../abis/Pool.json'
 import Swap from '../abis/Swap.json'
-import React, { Component } from 'react';
+import React, {  Component } from 'react';
 
 import Web3 from 'web3';
 import './App.css';
@@ -23,13 +23,20 @@ class App extends Component {
   async loadBlockchainData(dispatch) {
     if (typeof window.ethereum !== 'undefined') {
       const web3 = new Web3(window.ethereum)
-      const netId = await web3.eth.net.getId()
+      //const netId = await web3.eth.net.getId()
       const accounts = await web3.eth.getAccounts()
-
+      if (document.querySelector('.enableEthereumButton') !== null) {
+        const ethereumButton = document.querySelector('.enableEthereumButton')
+        ethereumButton.addEventListener('click', () => {
+          ethereumButton.disabled = true
+          this.getAccount()
+        })
+      }
       //load balance
       if (typeof accounts[0] !== 'undefined') {
         const balance = await web3.eth.getBalance(accounts[0])
-        this.setState({ account: accounts[0], balance: balance, web3: web3 })
+        this.setState({ account: accounts[0], balance: balance, web3: web3, connected: true })
+
       } else {
         window.alert('Please login with MetaMask')
       }
@@ -46,8 +53,14 @@ class App extends Component {
 
         const dkpAddress = '0x837C626dF66Ab6179143bdB18D1DD1a2618aE7e6'
 
-        this.setState({ token: govToken, dkp: dkp, router: router, factory: factory, pool: pool, swap: swap, lpToken: lpToken, address: dkpAddress })
-        this.update()
+        const currentRate = await dkp.methods.getRate().call()
+        const currentLp = await dkp.methods.getLP(web3.utils.toWei('1')).call()
+
+        this.setState({
+          token: govToken, dkp: dkp, router: router, factory: factory, pool: pool, swap: swap, lpToken: lpToken, address: dkpAddress,
+          rate: web3.utils.fromWei(currentRate.toString()),
+          lp: web3.utils.fromWei(currentLp.toString())
+        })
       } catch (e) {
         console.log('Error', e)
         window.alert('Contracts not deployed to the current network')
@@ -56,6 +69,11 @@ class App extends Component {
     } else {
       window.alert('Please install MetaMask')
     }
+  }
+
+  async getAccount() {
+    await window.ethereum.request({ method: 'eth_requestAccounts' })
+    this.componentWillMount()
   }
 
   async update() {
@@ -76,9 +94,9 @@ class App extends Component {
   async deposit(amount) {
     if (this.state.dkp !== 'undefined') {
       try {
-        await this.state.dkp.methods.deposit().send({ 
-          value: this.state.web3.utils.toWei(amount.toString()), 
-          from: this.state.account 
+        await this.state.dkp.methods.deposit().send({
+          value: this.state.web3.utils.toWei(amount.toString()),
+          from: this.state.account
         })
       } catch (e) {
         console.log('Error, deposit: ', e)
@@ -107,6 +125,7 @@ class App extends Component {
     super(props)
     this.state = {
       web3: 'undefined',
+      connected: false,
       account: '',
       token: null,
       dkp: null,
@@ -116,7 +135,10 @@ class App extends Component {
       factory: null,
       pool: null,
       swap: null,
-      lpToken: null
+      lpToken: null,
+      rate: '',
+      lp: '',
+      value: 0
     }
   }
 
@@ -131,29 +153,32 @@ class App extends Component {
             rel="noopener noreferrer"
           >
             <div>
-            <b>DKP</b>
+              <b>DKP</b>
             </div>
           </a>
-          <div>
-          <b>One: {Math.round(web3.utils.fromWei(this.state.balance.toString()) * 100) / 100}</b>
+          <div className='navbar-brand smaller'>
+            <b>One: {Math.round(web3.utils.fromWei(this.state.balance.toString()) * 100) / 100}</b>
           </div>
-          <div>
-          <b>{this.state.account}</b>
+          <div className='navbar-brand smaller'>
+            <b>{this.state.account === "" ?
+              <button className="enableEthereumButton btn btn-light">Connect</button> :
+              this.state.account
+            }</b>
           </div>
         </nav>
         <div className="container-fluid mt-5 text-center">
           <br></br>
-          <h1>Welcome to DK Protocol</h1>
-          
+          <h1>DK Protocol</h1>
+
           <br></br>
           <div className="row">
             <main role="main" className="col-lg-12 d-flex text-center">
-              <div className="content mr-auto ml-auto">
-                <Tabs defaultActiveKey="profile" id="uncontrolled-tab-example">
+              <div className="content col-lg-6 ml-auto mr-auto">
+                <Tabs defaultActiveKey="deposit" id="uncontrolled-tab-example">
                   <Tab eventKey="deposit" title="Deposit">
                     <div>
                       <br></br>
-                      How much One do you want to swap?
+                      How much One do you want to deposit?
                       <br></br>
                       (min. amount is 10 One)
                       <br></br>
@@ -162,34 +187,44 @@ class App extends Component {
                         let amount = this.depositAmount.value
                         this.deposit(amount)
                       }}>
-                        <div className='form-group mr-sm-2'>
+                        <div className='form-group'>
                           <br></br>
                           <input
                             id='depositAmount'
                             step="0.01"
                             type='number'
                             ref={(input) => { this.depositAmount = input }}
+                            onChange={e => this.setState({ value: e.target.value })}
                             className="form-control form-control-md"
                             placeholder='amount...'
                             required />
-                            
+
                         </div>
-                        <button type='submit' className='btn btn-primary'>DEPOSIT</button>
+                        <div>
+                          Expected mint amount: {Math.floor(((this.state.value * this.state.lp) / this.state.rate) * 10000) / 10000}
+                        </div>
+                        <div>
+                          LP created per One: {Math.floor(this.state.lp * 10000) / 10000}
+                        </div>
+                        <div>
+                          Mint Rate: {this.state.rate}
+                        </div>
+                        <button type='submit' className='btn btn-light mt-2'>DEPOSIT</button>
                       </form>
 
                     </div>
                   </Tab>
                   <Tab eventKey="swap" title="Swap">
-                      <div>
-                        Swap tokens here
-                        <form onSubmit={(e) => {
+                    <div>
+                      Swap tokens here
+                      <form onSubmit={(e) => {
                         e.preventDefault()
                         let amount = this.swapAmount.value
                         let tokenIn = '0xcF664087a5bB0237a0BAd6742852ec6c8d69A27a'
                         let tokenOut = '0x72Cb10C6bfA5624dD07Ef608027E366bd690048F'
                         this.swap(tokenIn, tokenOut, amount)
                       }}>
-                        <div className='form-group mr-sm-2'>
+                        <div className='form-group'>
                           <br></br>
                           <input
                             id='swapAmount'
@@ -199,10 +234,10 @@ class App extends Component {
                             className="form-control form-control-md"
                             placeholder='amount...'
                             required />
-                            <br></br>
-                            
-                            <br></br>
-                            <input
+                          <br></br>
+
+                          <br></br>
+                          <input
                             id='swapAmount'
                             step="0.01"
                             type='number'
@@ -211,14 +246,25 @@ class App extends Component {
                             placeholder='received...'
                             required />
                         </div>
-                        <button type='submit' className='btn btn-primary'>Swap</button>
+                        <button type='submit' className='btn btn-success mt-2'>Swap</button>
                       </form>
-                      </div>
+                    </div>
+                  </Tab>
+                  <Tab eventKey="heroes" title="Heroes">
+                    <div>
+                      Placeholder
+                      
+                    </div>
                   </Tab>
                 </Tabs>
               </div>
             </main>
           </div>
+            <nav className="navbar navbar-dark fixed-bottom bg-dark flex-md-nowrap p-0 shadow text-center">
+              <div className="navbar-brand col-sm-3 col-md-2 mr-auto ml-auto text-center">
+                DKP
+              </div>
+            </nav>
         </div>
       </div>
     );

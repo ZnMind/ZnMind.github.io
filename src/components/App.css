@@ -1,11 +1,94 @@
-body {
+html, body {
+    /* background-image: linear-gradient(#1C4532, #48BB78, #E2E8F0);
+    background-repeat: no-repeat;
+    background-size: 100%; */
+    background-color: #718096;
+    height: 110%;
+}
+
+#root {
     background-color: lightgray;
+    background-image: linear-gradient(#1C4532,/*  #48BB78, */ #E2E8F0);
+    background-repeat: no-repeat;
+    background-size: cover;
+    height: 110%;
+}
+
+h1 {
+    color: #E2E8F0;
+}
+
+.row {
+    height: 150%;
 }
 
 .container-fluid {
-    background-color: lightgray;
+    height: 150%;
 }
 
 .navbar {
     color: white;
+}
+
+.smaller {
+    font-size: 1rem;
+}
+
+.nav-tabs {
+    background-color: #343a40;
+    color: #E2E8F0;
+    border-bottom: 1px solid black;
+}
+
+.nav-tabs .nav-link.active, .nav-tabs .nav-item.show .nav-link {
+    color: black;
+    background-color: #718096;
+    border-color: transparent;
+    border-bottom-color: black;
+    /* border-radius: 0.25em; */
+}
+
+a {
+    color: #E2E8F0;
+    text-decoration: none;
+    background-color: transparent;
+}
+
+a:hover {
+    color: #E2E8F0;
+    border-bottom-color: black;
+}
+
+.tab-pane {
+    padding: 1em;
+}
+
+.content {
+    background-color: silver;
+    border: 1px solid black;
+    padding-left: 0em;
+    padding-right: 0em;
+    height: 150%;
+    border-bottom-left-radius: 1em;
+    border-bottom-right-radius: 1em;
+    background-image: linear-gradient(#E2E8F0, #718096);
+}
+
+.tab-content {
+    padding-top: 5em;
+    padding-left: 5em;
+    padding-right: 5em;
+    height: 150%;
+}
+
+.form-group {
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.btn {
+    color: white;
+    border: 1px solid black;
+    background-color: #1C4532;
 }
