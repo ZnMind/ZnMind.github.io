@@ -1,1 +1,0 @@
-{"version":3,"sources":["App.css"],"names":[],"mappings":"AAIA,sBACI,wBACJ,CAEA,QACI,UACJ","file":"main.d83b54a8.chunk.css","sourcesContent":["body {\r\n    background-color: lightgray;\r\n}\r\n\r\n.container-fluid {\r\n    background-color: lightgray;\r\n}\r\n\r\n.navbar {\r\n    color: white;\r\n}"]}
