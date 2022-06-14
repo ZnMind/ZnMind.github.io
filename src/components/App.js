@@ -7,10 +7,12 @@ import Pair from '../abis/Pair.json'
 import Erc20 from '../abis/Erc20.json'
 import Pool from '../abis/Pool.json'
 import Swap from '../abis/Swap.json'
+import Stake from '../abis/Stake.json'
 import React, {  Component } from 'react';
 
 import Web3 from 'web3';
 import './App.css';
+import logo from '../Logo.png'
 
 const web3 = new Web3(window.ethereum)
 
@@ -50,16 +52,27 @@ class App extends Component {
         const pool = new web3.eth.Contract(Pool.abi, '0xDB30643c71aC9e2122cA0341ED77d09D5f99F924')
         const swap = new web3.eth.Contract(Swap.abi, '0x72885b5066424eCC1DE4A5a3EF8c377de07a467A')
         const lpToken = new web3.eth.Contract(Erc20.abi, '0xEb579ddcD49A7beb3f205c9fF6006Bb6390F138f')
+        const staker = new web3.eth.Contract(Stake.abi, '0xEF356871b5ad2e1457C832ABC0B06173A33a9B8C')
 
         const dkpAddress = '0x837C626dF66Ab6179143bdB18D1DD1a2618aE7e6'
 
         const currentRate = await dkp.methods.getRate().call()
         const currentLp = await dkp.methods.getLP(web3.utils.toWei('1')).call()
+        const stakeBalance = await govToken.methods.balanceOf('0xEF356871b5ad2e1457C832ABC0B06173A33a9B8C').call()
+        const xSupply = await staker.methods.totalSupply().call()
+        const xRate = stakeBalance / xSupply
+
+        const allowed = await govToken.methods.allowance(this.state.account, '0xEF356871b5ad2e1457C832ABC0B06173A33a9B8C').call()
+        const xAllowed = await staker.methods.allowance(this.state.account, '0xEF356871b5ad2e1457C832ABC0B06173A33a9B8C').call()
+        const xAmount = await staker.methods.balanceOf(this.state.account).call()
 
         this.setState({
           token: govToken, dkp: dkp, router: router, factory: factory, pool: pool, swap: swap, lpToken: lpToken, address: dkpAddress,
           rate: web3.utils.fromWei(currentRate.toString()),
-          lp: web3.utils.fromWei(currentLp.toString())
+          lp: web3.utils.fromWei(currentLp.toString()),
+          allowed: web3.utils.fromWei(allowed.toString()), 
+          xAllowed: web3.utils.fromWei(xAllowed.toString()), 
+          staker: staker, xRate: xRate, xAmount: xAmount
         })
       } catch (e) {
         console.log('Error', e)
@@ -121,6 +134,40 @@ class App extends Component {
     } */
   }
 
+  async stake(amount) {
+    try {
+      await this.state.staker.methods.stake(amount).send({
+        from: this.state.account
+      })
+    } catch (e) {
+      console.log('Error, deposit: ', e)
+    }
+  }
+
+  async unStake(amount) {
+    try {
+      await this.state.staker.methods.unStake(amount).send({
+        from: this.state.account
+      })
+    } catch (e) {
+      console.log('Error, deposit: ', e)
+    }
+  }
+
+  async approveStake() {
+    let approve_amount = '115792089237316195423570985008687907853269984665640564039457584007913129639935'; //(2^256 - 1 )
+    await this.state.token.methods.approve('0xEF356871b5ad2e1457C832ABC0B06173A33a9B8C', approve_amount).send({from: this.state.account})
+    const allowed = await this.state.token.methods.allowance(this.state.account, '0xEF356871b5ad2e1457C832ABC0B06173A33a9B8C').call()
+    this.setState({allowed: allowed})
+  }
+
+  async approveUnstake() {
+    let approve_amount = '115792089237316195423570985008687907853269984665640564039457584007913129639935'; //(2^256 - 1 )
+    await this.state.staker.methods.approve('0xEF356871b5ad2e1457C832ABC0B06173A33a9B8C', approve_amount).send({from: this.state.account})
+    const xAllowed = await this.state.staker.methods.allowance(this.state.account, '0xEF356871b5ad2e1457C832ABC0B06173A33a9B8C').call()
+    this.setState({xAllowed: xAllowed})
+  }
+
   constructor(props) {
     super(props)
     this.state = {
@@ -138,17 +185,23 @@ class App extends Component {
       lpToken: null,
       rate: '',
       lp: '',
-      value: 0
+      value: 0,
+      xvalue: 0,
+      staker: null,
+      allowed: 0,
+      xAllowed: 0,
+      xRate: 1,
+      xAmount: 0
     }
   }
 
   render() {
     return (
       <div className='text-monospace'>
-        <nav className="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
+        <nav className="navbar fixed-top flex-md-nowrap p-0">
           <a
-            className="navbar-brand col-sm-3 col-md-2 mr-0"
-            href="http://www.dappuniversity.com/bootcamp"
+            className="navbar navbar-brand col-sm-3 col-md-2 mr-0"
+            href="https://dexscreener.com/harmony/0x8766079a62ea0bd58cb3fd98c006a9321c3009c6"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -156,7 +209,7 @@ class App extends Component {
               <b>DKP</b>
             </div>
           </a>
-          <div className='navbar-brand smaller'>
+          <div className='navbar-brand'>
             <b>One: {Math.round(web3.utils.fromWei(this.state.balance.toString()) * 100) / 100}</b>
           </div>
           <div className='navbar-brand smaller'>
@@ -166,21 +219,21 @@ class App extends Component {
             }</b>
           </div>
         </nav>
-        <div className="container-fluid mt-5 text-center">
+        <div className="container-fluid mt-4 text-center">
           <br></br>
           <h1>DK Protocol</h1>
 
           <br></br>
           <div className="row">
             <main role="main" className="col-lg-12 d-flex text-center">
-              <div className="content col-lg-6 ml-auto mr-auto">
+              <div className="content col-lg-3 ml-auto mr-auto">
                 <Tabs defaultActiveKey="deposit" id="uncontrolled-tab-example">
                   <Tab eventKey="deposit" title="Deposit">
                     <div>
                       <br></br>
                       How much One do you want to deposit?
                       <br></br>
-                      (min. amount is 10 One)
+                      (Minimum is 10 One)
                       <br></br>
                       <form onSubmit={(e) => {
                         e.preventDefault()
@@ -214,7 +267,61 @@ class App extends Component {
 
                     </div>
                   </Tab>
-                  <Tab eventKey="swap" title="Swap">
+                  <Tab eventKey="stake" title="Stake">
+                    <div>
+                      <b>Stake tokens here</b>
+                      <br></br>
+                      xDKP Rate: {Math.floor(this.state.xRate * 10000) / 10000}
+                      <br></br>
+                      xDKP Amount: {Math.floor(web3.utils.fromWei(this.state.xAmount.toString()) * 100) / 100}
+                      <form onSubmit={(e) => {
+                        e.preventDefault()                      
+                      }}>
+                        <div className='form-group'>
+                          <br></br>
+                          <input
+                            id='stakeAmount'
+                            step="0.01"
+                            type='number'
+                            ref={(input) => { this.stakeAmount = input }}
+                            onChange={e => this.setState({ value: e.target.value })}
+                            className="form-control form-control-md mt-1"
+                            placeholder='amount...'
+                             />
+                          <br></br>
+                          {this.state.allowed <= 1000 ?
+                          <button onClick={() => this.approveStake()} className='btn btn-light mt-1 mb-2'>Approve</button>:
+                          <button onClick={() => this.stake(web3.utils.toWei(this.stakeAmount.value.toString()))} className='btn btn-light mt-1 mb-2'>Stake</button>
+                          }
+                          <br></br>
+                          {this.state.value > 0 ?
+                          "xDKP gotten: " + Math.floor((this.state.value / this.state.xRate) * 10000) / 10000:
+                          ""}
+
+                          <br></br>
+                          <input
+                            id='unstakeAmount'
+                            step="0.01"
+                            type='number'
+                            ref={(input) => { this.unstakeAmount = input }}
+                            onChange={e => this.setState({ xvalue: e.target.value })}
+                            className="form-control form-control-md mt-1"
+                            placeholder='amount...'
+                             />
+                             <br></br>
+                        {this.state.xAllowed <= 1000 ?
+                          <button onClick={() => this.approveUnstake()} className='btn btn-light mt-1 mb-2'>Approve</button>:
+                          <button onClick={() => this.unStake(web3.utils.toWei(this.unstakeAmount.value.toString()))} className='btn btn-light mt-1 mb-2'>Unstake</button>
+                        }
+                          <br></br>
+                          {this.state.xvalue > 0 ?
+                          "DKP returned: " + Math.floor((this.state.xvalue * this.state.xRate) * 10000) / 10000:
+                          ""}
+                          </div>
+                      </form>
+                    </div>
+                  </Tab>
+                  {/* <Tab eventKey="swap" title="Swap">
                     <div>
                       Swap tokens here
                       <form onSubmit={(e) => {
@@ -246,21 +353,24 @@ class App extends Component {
                             placeholder='received...'
                             required />
                         </div>
-                        <button type='submit' className='btn btn-success mt-2'>Swap</button>
+                        <button type='submit' className='btn btn-light mt-2'>Swap</button>
                       </form>
                     </div>
-                  </Tab>
-                  <Tab eventKey="heroes" title="Heroes">
+                  </Tab> */}
+                  {/* <Tab eventKey="transactions" title="Transactions">
                     <div>
                       Placeholder
                       
                     </div>
-                  </Tab>
+                  </Tab> */}
                 </Tabs>
               </div>
             </main>
           </div>
-            <nav className="navbar navbar-dark fixed-bottom bg-dark flex-md-nowrap p-0 shadow text-center">
+          <div className='logo fixed-bottom'>
+            <img className="logo mb-5" src={logo} alt="Logo"></img>
+          </div>
+            <nav className="navbar fixed-bottom flex-md-nowrap p-0 shadow text-center">
               <div className="navbar-brand col-sm-3 col-md-2 mr-auto ml-auto text-center">
                 DKP
               </div>

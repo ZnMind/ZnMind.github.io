@@ -1,33 +1,47 @@
 html, body {
-    /* background-image: linear-gradient(#1C4532, #48BB78, #E2E8F0);
-    background-repeat: no-repeat;
-    background-size: 100%; */
-    background-color: #718096;
-    height: 110%;
+    background-color: #343a40;
+    height: 100%;
 }
 
 #root {
-    background-color: lightgray;
-    background-image: linear-gradient(#1C4532,/*  #48BB78, */ #E2E8F0);
+    background-color: #343a40;
+    background-image: radial-gradient(black, #343a40);
     background-repeat: no-repeat;
     background-size: cover;
-    height: 110%;
+    height: 100%;
+}
+
+@font-face {
+    font-family: 'gameOfSquids';
+    src: url('game_of_squids-webfont.woff') format('woff');
+    font-weight: normal;
 }
 
 h1 {
-    color: #E2E8F0;
+    font-family: 'gameOfSquids';
+    margin-top: 2rem;
+    filter: drop-shadow(0em 0em 0.02054405em rgba(40, 200, 0, 0.950000)) drop-shadow(0em 0em 0.10272025em rgba(53, 200, 17, 0.750000)) drop-shadow(0em 0em 0.30816075em rgba(53, 200, 17, 0.440000));
+    text-transform: uppercase;
+    color: #37c214;
+    letter-spacing: 0.06em;
+    line-height: 0.94em;
+    text-align: center;
+    font-size: 3rem;
+    height: 120%;
 }
 
 .row {
-    height: 150%;
+    height: 100%;
 }
 
 .container-fluid {
-    height: 150%;
+    height: 100%;
 }
 
 .navbar {
-    color: white;
+    color: black;
+    background-color: #1b8600;
+    margin-bottom: 0;
 }
 
 .smaller {
@@ -35,17 +49,16 @@ h1 {
 }
 
 .nav-tabs {
-    background-color: #343a40;
+    background-color: black;
     color: #E2E8F0;
     border-bottom: 1px solid black;
 }
 
 .nav-tabs .nav-link.active, .nav-tabs .nav-item.show .nav-link {
     color: black;
-    background-color: #718096;
+    background-color: #1b8600;
     border-color: transparent;
     border-bottom-color: black;
-    /* border-radius: 0.25em; */
 }
 
 a {
@@ -65,20 +78,19 @@ a:hover {
 
 .content {
     background-color: silver;
-    border: 1px solid black;
     padding-left: 0em;
     padding-right: 0em;
-    height: 150%;
-    border-bottom-left-radius: 1em;
-    border-bottom-right-radius: 1em;
-    background-image: linear-gradient(#E2E8F0, #718096);
+    height: 100%;
 }
 
 .tab-content {
-    padding-top: 5em;
-    padding-left: 5em;
-    padding-right: 5em;
-    height: 150%;
+    padding: 2em;
+    height: 100%;
+    border: 1px solid black;
+    border-bottom-left-radius: 1em;
+    border-bottom-right-radius: 1em;
+    background-image: linear-gradient(to bottom right, #1b8600, #37c214);
+    box-shadow: 6px 5px 0.5em black;
 }
 
 .form-group {
@@ -90,5 +102,15 @@ a:hover {
 .btn {
     color: white;
     border: 1px solid black;
-    background-color: #1C4532;
+    background-color: #343a40;
+}
+
+.logo {
+    display: flex;
+    padding: 1em;
+    justify-content: flex-end;
+}
+
+.bottom {
+    margin-top: 10em;
 }
