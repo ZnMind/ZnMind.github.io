@@ -40,7 +40,7 @@ class App extends Component {
         this.setState({ account: accounts[0], balance: balance, web3: web3, connected: true })
 
       } else {
-        window.alert('Please login with MetaMask')
+        this.setState({ connected: false })
       }
 
       //load contracts
@@ -76,7 +76,6 @@ class App extends Component {
         })
       } catch (e) {
         console.log('Error', e)
-        window.alert('Contracts not deployed to the current network')
       }
 
     } else {
@@ -187,6 +186,7 @@ class App extends Component {
       lp: '',
       value: 0,
       xvalue: 0,
+      svalue:0,
       staker: null,
       allowed: 0,
       xAllowed: 0,
@@ -210,7 +210,9 @@ class App extends Component {
             </div>
           </a>
           <div className='navbar-brand'>
-            <b>One: {Math.round(web3.utils.fromWei(this.state.balance.toString()) * 100) / 100}</b>
+            {this.state.connected ? 
+            <b>One: {Math.round(web3.utils.fromWei(this.state.balance.toString()) * 100) / 100}</b>:
+            <p></p>}
           </div>
           <div className='navbar-brand smaller'>
             <b>{this.state.account === "" ?
@@ -222,7 +224,6 @@ class App extends Component {
         <div className="container-fluid mt-4 text-center">
           <br></br>
           <h1>DK Protocol</h1>
-
           <br></br>
           <div className="row">
             <main role="main" className="col-lg-12 d-flex text-center">
@@ -233,7 +234,7 @@ class App extends Component {
                       <br></br>
                       How much One do you want to deposit?
                       <br></br>
-                      (Minimum is 10 One)
+                      (Minimum of 10 One)
                       <br></br>
                       <form onSubmit={(e) => {
                         e.preventDefault()
@@ -244,7 +245,7 @@ class App extends Component {
                           <br></br>
                           <input
                             id='depositAmount'
-                            step="0.01"
+                            step="10"
                             type='number'
                             ref={(input) => { this.depositAmount = input }}
                             onChange={e => this.setState({ value: e.target.value })}
@@ -254,7 +255,9 @@ class App extends Component {
 
                         </div>
                         <div>
-                          Expected mint amount: {Math.floor(((this.state.value * this.state.lp) / this.state.rate) * 10000) / 10000}
+                          Expected mint amount: { this.state.rate ?
+                          Math.floor(((this.state.value * this.state.lp) / this.state.rate) * 10000) / 10000 :
+                          0 }
                         </div>
                         <div>
                           LP created per One: {Math.floor(this.state.lp * 10000) / 10000}
@@ -262,7 +265,7 @@ class App extends Component {
                         <div>
                           Mint Rate: {this.state.rate}
                         </div>
-                        <button type='submit' className='btn btn-light mt-2'>DEPOSIT</button>
+                        <button type='submit' className='btn btn-light mt-2'>Deposit</button>
                       </form>
 
                     </div>
@@ -281,10 +284,10 @@ class App extends Component {
                           <br></br>
                           <input
                             id='stakeAmount'
-                            step="0.01"
+                            step="10"
                             type='number'
                             ref={(input) => { this.stakeAmount = input }}
-                            onChange={e => this.setState({ value: e.target.value })}
+                            onChange={e => this.setState({ svalue: e.target.value })}
                             className="form-control form-control-md mt-1"
                             placeholder='amount...'
                              />
@@ -294,14 +297,14 @@ class App extends Component {
                           <button onClick={() => this.stake(web3.utils.toWei(this.stakeAmount.value.toString()))} className='btn btn-light mt-1 mb-2'>Stake</button>
                           }
                           <br></br>
-                          {this.state.value > 0 ?
-                          "xDKP gotten: " + Math.floor((this.state.value / this.state.xRate) * 10000) / 10000:
+                          {this.state.svalue > 0 ?
+                          "xDKP gotten: " + Math.floor((this.state.svalue / this.state.xRate) * 10000) / 10000 :
                           ""}
 
                           <br></br>
                           <input
                             id='unstakeAmount'
-                            step="0.01"
+                            step="10"
                             type='number'
                             ref={(input) => { this.unstakeAmount = input }}
                             onChange={e => this.setState({ xvalue: e.target.value })}
@@ -335,7 +338,7 @@ class App extends Component {
                           <br></br>
                           <input
                             id='swapAmount'
-                            step="0.01"
+                            step="10"
                             type='number'
                             ref={(input) => { this.swapAmount = input }}
                             className="form-control form-control-md"
@@ -346,7 +349,7 @@ class App extends Component {
                           <br></br>
                           <input
                             id='swapAmount'
-                            step="0.01"
+                            step="10"
                             type='number'
                             ref={(input) => { this.swapAmount = input }}
                             className="form-control form-control-md"
