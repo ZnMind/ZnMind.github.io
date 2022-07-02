@@ -14,18 +14,36 @@ import Web3 from 'web3';
 import './App.css';
 import logo from '../Logo.png'
 
-const web3 = new Web3(window.ethereum)
+//const web3 = new Web3("https://api.s0.t.hmny.io") //Mainnet RPC
+const web3 = new Web3("https://harmony-0-rpc.gateway.pokt.network") //Pokt RPC
 
 class App extends Component {
 
-  async componentWillMount() {
+  async componentDidMount() {
     await this.loadBlockchainData(this.props.dispatch)
   }
 
   async loadBlockchainData(dispatch) {
+    //const web3 = new Web3("https://api.s0.t.hmny.io") //Mainnet RPC
+    const web3 = new Web3("https://harmony-0-rpc.gateway.pokt.network") //Pokt RPC
+    const dkp = new web3.eth.Contract(Dkp.abi, '0x837C626dF66Ab6179143bdB18D1DD1a2618aE7e6')
+    const govToken = new web3.eth.Contract(Govtoken.abi, '0x1DF82Bfb54A8134Fd34A02E51Af788d97b072a7F')
+    const staker = new web3.eth.Contract(Stake.abi, '0xEF356871b5ad2e1457C832ABC0B06173A33a9B8C')
+    const currentRate = await dkp.methods.getRate().call()
+    const currentLp = await dkp.methods.getLP(web3.utils.toWei('1')).call()
+    const stakeBalance = await govToken.methods.balanceOf('0xEF356871b5ad2e1457C832ABC0B06173A33a9B8C').call()
+    const xSupply = await staker.methods.totalSupply().call()
+    const xRate = stakeBalance / xSupply
+
+    this.setState({ 
+      web3: web3,
+      rate: web3.utils.fromWei(currentRate.toString()),
+      lp: web3.utils.fromWei(currentLp.toString()),
+      xRate: xRate
+    })
+
     if (typeof window.ethereum !== 'undefined') {
       const web3 = new Web3(window.ethereum)
-      //const netId = await web3.eth.net.getId()
       const accounts = await web3.eth.getAccounts()
       if (document.querySelector('.enableEthereumButton') !== null) {
         const ethereumButton = document.querySelector('.enableEthereumButton')
@@ -38,7 +56,6 @@ class App extends Component {
       if (typeof accounts[0] !== 'undefined') {
         const balance = await web3.eth.getBalance(accounts[0])
         this.setState({ account: accounts[0], balance: balance, web3: web3, connected: true })
-
       } else {
         this.setState({ connected: false })
       }
@@ -75,7 +92,8 @@ class App extends Component {
           staker: staker, xRate: xRate, xAmount: xAmount
         })
       } catch (e) {
-        console.log('Error', e)
+        console.log(e)
+        console.log(this.state.connected)
       }
 
     } else {
@@ -85,7 +103,7 @@ class App extends Component {
 
   async getAccount() {
     await window.ethereum.request({ method: 'eth_requestAccounts' })
-    this.componentWillMount()
+    this.componentDidMount()
   }
 
   async update() {
@@ -121,7 +139,7 @@ class App extends Component {
     let amountOutMin = await this.state.swap.methods.getAmountOutMin(tokenIn, tokenOut, web3.utils.toWei(amount.toString())).call()
     amountOutMin = (amountOutMin * 99) / 100
     console.log(web3.utils.fromWei(amountOutMin.toString()))
-    /* try {
+    try {
       await this.state.swap.methods.swap(tokenIn, tokenOut, web3.utils.toWei(amount.toString()), amountOutMin.toString(), this.state.account, web3.utils.toWei('60000')).send({
         //value: this.state.web3.utils.toWei(amount.toString()),
         from: this.state.account,
@@ -130,7 +148,7 @@ class App extends Component {
       })
     } catch (e) {
       console.log('Error, swap: ', e)
-    } */
+    }
   }
 
   async stake(amount) {
@@ -229,10 +247,10 @@ class App extends Component {
             <main role="main" className="col-lg-12 d-flex text-center">
               <div className="content col-lg-3 ml-auto mr-auto">
                 <Tabs defaultActiveKey="deposit" id="uncontrolled-tab-example">
-                  <Tab eventKey="deposit" title="Deposit">
+                  <Tab eventKey="deposit" title="Mint">
                     <div>
                       <br></br>
-                      How much One do you want to deposit?
+                      How much One would you like to mint with?
                       <br></br>
                       (Minimum of 10 One)
                       <br></br>
@@ -245,7 +263,7 @@ class App extends Component {
                           <br></br>
                           <input
                             id='depositAmount'
-                            step="10"
+                            step="0.01"
                             type='number'
                             ref={(input) => { this.depositAmount = input }}
                             onChange={e => this.setState({ value: e.target.value })}
@@ -265,7 +283,7 @@ class App extends Component {
                         <div>
                           Mint Rate: {this.state.rate}
                         </div>
-                        <button type='submit' className='btn btn-light mt-2'>Deposit</button>
+                        <button type='submit' className='btn btn-light mt-2'>Mint</button>
                       </form>
 
                     </div>
@@ -284,7 +302,7 @@ class App extends Component {
                           <br></br>
                           <input
                             id='stakeAmount'
-                            step="10"
+                            step="0.01"
                             type='number'
                             ref={(input) => { this.stakeAmount = input }}
                             onChange={e => this.setState({ svalue: e.target.value })}
@@ -304,7 +322,7 @@ class App extends Component {
                           <br></br>
                           <input
                             id='unstakeAmount'
-                            step="10"
+                            step="0.01"
                             type='number'
                             ref={(input) => { this.unstakeAmount = input }}
                             onChange={e => this.setState({ xvalue: e.target.value })}
@@ -338,7 +356,7 @@ class App extends Component {
                           <br></br>
                           <input
                             id='swapAmount'
-                            step="10"
+                            step="0.01"
                             type='number'
                             ref={(input) => { this.swapAmount = input }}
                             className="form-control form-control-md"
@@ -349,7 +367,7 @@ class App extends Component {
                           <br></br>
                           <input
                             id='swapAmount'
-                            step="10"
+                            step="0.01"
                             type='number'
                             ref={(input) => { this.swapAmount = input }}
                             className="form-control form-control-md"
